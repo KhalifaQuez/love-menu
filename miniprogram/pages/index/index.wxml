@@ -1,0 +1,289 @@
+<view class="home" bindtouchstart="onTouchStart" bindtouchmove="onTouchMove" bindtouchend="onTouchEnd" bindtouchcancel="onTouchEnd">
+  <swiper class="banner {{ready ? 'banner-visible' : ''}}" autoplay circular interval="3000" duration="650" easing-function="easeInOutCubic" bindtransition="onSwiperTransition" bindanimationfinish="onSwiperFinish">
+    <swiper-item wx:for="{{slides}}" wx:key="id">
+      <view class="slide"><image src="{{item.src}}" mode="aspectFill" style="position:absolute;width:100%;height:100%;"></image>
+        <text class="slide-title">{{item.title}}</text>
+        <text class="slide-subtitle">{{item.subtitle}}</text>
+      </view>
+    </swiper-item>
+  </swiper>
+  <view wx:if="{{panelTop > minPanelTop + 20}}" class="pull-tip">
+    <text class="pull-tip-text">{{orderComplete ? '向上滑动继续点菜' : '向上拉动，开始点菜'}}</text>
+    <text class="pull-tip-arrow">↑</text>
+  </view>
+  <view wx:if="{{panelReady}}" class="sheet {{dragging ? 'sheet-dragging' : ''}}" style="transform: translateY({{panelTop}}px);">
+    <view class="pull-handle"></view>
+    <view class="sheet-content">
+      <view class="gummy-button">
+        <button wx:if="{{!buttonOrbiting && !buttonExploding && !orderComplete}}" class="wish-button {{buttonPressed ? 'wish-button-pressed' : ''}} {{buttonRebounding ? 'wish-button-rebounding' : ''}} {{buttonCollapsing ? 'wish-button-collapsing' : ''}}" bindtouchstart="onWishTouchStart" bindtouchend="onWishTouchEnd" bindtouchcancel="onWishTouchCancel" bindtap="startOrder">
+          <text class="wish-button-label">今天想吃什么？</text>
+        </button>
+        <view wx:if="{{buttonOrbiting || buttonExploding}}" class="button-finale">
+          <view wx:if="{{buttonOrbiting}}" class="orbit-dot"></view>
+          <block wx:if="{{buttonExploding}}">
+            <view class="bubble bubble-one"></view>
+            <view class="bubble bubble-two"></view>
+            <view class="bubble bubble-three"></view>
+            <view class="bubble bubble-four"></view>
+            <view class="bubble bubble-five"></view>
+            <view class="bubble bubble-six"></view>
+            <view class="bubble bubble-seven"></view>
+            <view class="bubble bubble-eight"></view>
+          </block>
+        </view>
+      </view>
+    </view>
+    <view wx:if="{{completionFill}}" class="completion-fill"></view>
+    <view wx:if="{{menuVisible}}" class="menu-page">
+      <view wx:if="{{!categoryPickerOpen}}" class="menu-header" bindtap="openCategoryPicker">
+        <text class="menu-kicker">DISH TYPE</text>
+        <view class="category-title-row">
+          <text class="menu-title">{{activeCategory}}</text>
+          <text class="category-switch">切换 ›</text>
+        </view>
+        <text class="menu-subtitle">点击这里，转动轮盘选择分类。</text>
+      </view>
+      <view wx:else class="category-wheel-card">
+        <text class="wheel-title">转动轮盘，选择分类</text>
+        <view class="category-wheel" catchtouchstart="onWheelTouchStart" catchtouchmove="onWheelTouchMove" catchtouchend="onWheelTouchEnd" catchtouchcancel="onWheelTouchEnd">
+          <view class="wheel-focus {{wheelFocusActive ? 'wheel-focus-active' : ''}}">
+            <text>{{pendingCategory}}</text>
+          </view>
+          <view class="wheel-ring {{wheelDragging ? 'wheel-dragging' : ''}}" style="transform: rotate({{wheelRotation}}deg);">
+            <view wx:for="{{categories}}" wx:key="name" class="wheel-item {{index === pickerValue[0] ? 'wheel-item-active' : ''}}" style="transform: rotate({{item.angle}}deg) translateY(-222rpx);">
+              <text class="wheel-label" style="transform: rotate({{-(item.angle + wheelRotation)}}deg);">
+                {{item.name}}
+              </text>
+            </view>
+          </view>
+          <view class="wheel-center">
+            <text class="wheel-center-label">当前选择</text>
+            <text class="wheel-center-value">{{pendingCategory}}</text>
+          </view>
+        </view>
+        <view class="wheel-actions">
+          <text class="wheel-cancel" bindtap="cancelCategoryPicker">取消</text>
+          <text class="wheel-confirm" bindtap="confirmCategory">完成</text>
+        </view>
+      </view>
+      <scroll-view
+  class="menu-list"
+  scroll-y
+  bindscroll="onMenuScroll"
+  bindtouchstart="onMenuTouchStart"
+  bindtouchend="onMenuTouchEnd"
+  bindtouchcancel="onMenuTouchEnd"
+>
+<view
+  wx:if="{{displayItems.length}}"
+  style="height: {{menuEdgeSpace}}px;"
+></view>
+        <block wx:if="{{displayItems.length}}">
+          <view wx:for="{{displayItems}}" wx:key="id" class="menu-card {{focusedDishId === 'dish-' + item.id ? 'menu-card-focused' : ''}}" id="dish-{{item.id}}" style="animation-delay: {{index * 120}}ms;">
+            <image class="menu-image" src="{{item.image}}" mode="aspectFill"></image>
+            <view class="menu-info">
+              <text class="menu-name">{{item.name}}</text>
+              <text class="menu-description">{{item.description}}</text>
+            </view>
+            <button class="dish-choice {{item.selected ? 'dish-choice-selected' : ''}}" data-id="{{item.id}}" catchtap="toggleDish">
+              {{item.selected ? '已想吃' : '想吃'}}
+            </button>
+          </view>
+        </block>
+        <view wx:else class="menu-empty">
+          <text class="menu-empty-title">{{activeCategory}}正在准备中</text>
+          <text class="menu-empty-subtitle">先看看炒菜，其他分类很快补上。</text>
+        </view>
+        <view class="feedback-entry" hover-class="feedback-entry-hover" catchtouchmove="stopModal" catchtap="openFeedback">
+          没有想吃的菜？给我反馈
+        </view>
+         <view
+  wx:if="{{displayItems.length}}"
+  style="height: {{menuEdgeSpace}}px;"
+></view>
+        <view class="menu-bottom-space"></view>
+      </scroll-view>
+      <view wx:if="{{displayItems.length}}" class="order-bar">
+        <view class="order-basket order-button" hover-class="order-button-hover" hover-stay-time="80" catchtouchmove="stopModal" catchtap="onBasketTap">
+          <text>菜筐：{{selectedDishCount}}</text>
+        </view>
+        <view class="order-submit order-button" hover-class="order-button-hover" hover-stay-time="80" catchtouchmove="stopModal" catchtap="onSubmitOrder">
+          <text>选好了去提交</text>
+        </view>
+      </view>
+      <!-- 菜筐遮罩：点击空白处关闭 -->
+      <view wx:if="{{basketVisible}}" class="basket-mask {{basketClosing ? 'basket-mask-closing' : ''}}" catchtap="closeBasket"></view>
+      <!-- 菜筐弹窗 -->
+      <view wx:if="{{basketVisible}}" class="basket-modal {{basketClosing ? 'basket-modal-closing' : ''}}" catchtap="stopModal">
+        <view class="basket-modal-head">
+          <view>
+            <text class="basket-kicker">MY BASKET</text>
+            <text class="basket-title">今天想吃这些</text>
+          </view>
+          <view class="basket-close" catchtap="closeBasket">×</view>
+        </view>
+        <scroll-view class="basket-list" scroll-y>
+          <block wx:if="{{basketItems.length}}">
+            <view wx:for="{{basketItems}}" wx:key="id" class="basket-dish">
+              <image class="basket-dish-image" src="{{item.image}}" mode="aspectFill"></image>
+              <view class="basket-dish-info">
+                <text class="basket-dish-name">{{item.name}}</text>
+                <text class="basket-dish-quantity">× {{item.quantity}} 份</text>
+                <input class="basket-note-input" value="{{item.note}}" data-id="{{item.id}}" maxlength="24" placeholder="写下口味备注，例如：少辣" placeholder-class="basket-note-placeholder" bindinput="onDishNoteInput"></input>
+              </view>
+              <view class="basket-remove" data-id="{{item.id}}" catchtap="removeDishFromBasket">
+                减一份
+              </view>
+            </view>
+          </block>
+          <view wx:else class="basket-empty">
+            <text class="basket-empty-title">菜筐还是空的</text>
+            <text class="basket-empty-subtitle">去挑几道想吃的菜吧~</text>
+          </view>
+        </scroll-view>
+      </view>
+      <!-- 反馈弹窗 -->
+      <view wx:if="{{feedbackVisible}}" class="feedback-mask" catchtap="closeFeedback"></view>
+      <view wx:if="{{feedbackVisible}}" class="feedback-modal" catchtap="stopModal">
+        <view class="feedback-head">
+          <text class="feedback-title">告诉我你想吃什么</text>
+          <view class="feedback-close" hover-class="feedback-close-hover" catchtap="closeFeedback">
+            ×
+          </view>
+        </view>
+        <text class="feedback-subtitle">把想吃的菜告诉我~</text>
+        <view class="feedback-form">
+          <view class="feedback-select">
+            <view class="feedback-field feedback-picker" catchtap="toggleFeedbackCategory">
+              <text>{{categories[feedbackCategoryIndex].name}}</text>
+              <text>{{feedbackCategoryOpen ? '⌃' : '⌄'}}</text>
+            </view>
+            <scroll-view wx:if="{{feedbackCategoryOpen}}" class="feedback-options" scroll-y scroll-into-view="feedback-option-{{feedbackCategoryIndex}}">
+              <view wx:for="{{categories}}" wx:key="name" id="feedback-option-{{index}}" class="feedback-option {{feedbackCategoryIndex === index ? 'feedback-option-selected' : ''}}" data-index="{{index}}" catchtap="selectFeedbackCategory">
+                {{item.name}}
+              </view>
+            </scroll-view>
+          </view>
+          <input class="feedback-field feedback-name" placeholder="输入想添加的菜名" value="{{feedbackName}}" maxlength="30" bindinput="onFeedbackNameInput" />
+          <view class="feedback-image-button" hover-class="feedback-entry-hover" catchtap="chooseFeedbackImage">
+            <image wx:if="{{feedbackImage}}" class="feedback-image-preview" src="{{feedbackImage}}" mode="aspectFill" />
+            <text wx:else>＋ 选择菜品图片</text>
+          </view>
+          <view class="feedback-save" hover-class="feedback-entry-hover" catchtap="saveCustomDish">
+            {{savingDish ? '正在保存…' : '添加这道菜'}}
+          </view>
+        </view>
+      </view>
+      <view wx:if="{{submitPageVisible}}" class="submit-page {{submitPageClosing ? 'submit-page-closing' : ''}}">
+        <view class="submit-back {{wishConfirmed ? 'submit-content-fade' : ''}}" hover-class="feedback-close-hover" catchtap="closeSubmitPage">
+          ‹
+        </view>
+        <text class="submit-title {{wishConfirmed ? 'submit-content-fade' : ''}}">今天想吃这些</text>
+        <text class="submit-subtitle {{wishConfirmed ? 'submit-content-fade' : ''}}">
+          再看看有没有选好~
+        </text>
+        <scroll-view class="submit-list {{wishConfirmed ? 'submit-content-fade' : ''}}" scroll-y>
+          <view wx:for="{{basketItems}}" wx:key="id" class="submit-dish">
+            <image class="submit-dish-image" src="{{item.image}}" mode="aspectFill" />
+            <view class="submit-dish-info">
+              <text class="submit-dish-name">{{item.name}} × {{item.quantity}}份</text>
+              <text class="submit-dish-note">{{item.note ? item.note : '暂无口味备注'}}</text>
+            </view>
+            <view class="submit-remove" data-id="{{item.id}}" hover-class="feedback-entry-hover" catchtap="removeDishFromBasket">
+              取消
+            </view>
+          </view>
+          <view wx:if="{{!basketItems.length}}" class="submit-empty">还没有选菜，返回挑几道吧~</view>
+          <view class="meal-time-card">
+            <text class="meal-time-title">什么时候吃？</text>
+            <view class="meal-time-trigger" catchtap="toggleMealPicker">
+              <text>{{mealDate && mealTime ? mealDate + ' ' + mealTime : '选择用餐日期和时间'}}</text>
+              <text>{{mealPickerOpen ? '⌃' : '⌄'}}</text>
+            </view>
+            <view wx:if="{{mealPickerOpen}}" class="meal-dropdown">
+              <view class="meal-columns">
+                <scroll-view class="meal-column" scroll-y>
+                  <view wx:for="{{mealYears}}" wx:key="*this" class="meal-option {{mealYear === item ? 'meal-option-selected' : ''}}" data-part="mealYear" data-value="{{item}}" catchtap="selectMealPart">
+                    {{item}}年
+                  </view>
+                </scroll-view>
+                <scroll-view class="meal-column" scroll-y>
+                  <view wx:for="{{mealMonths}}" wx:key="*this" class="meal-option {{mealMonth === item ? 'meal-option-selected' : ''}}" data-part="mealMonth" data-value="{{item}}" catchtap="selectMealPart">
+                    {{item}}月
+                  </view>
+                </scroll-view>
+                <scroll-view class="meal-column" scroll-y>
+                  <view wx:for="{{mealDays}}" wx:key="*this" class="meal-option {{mealDay === item ? 'meal-option-selected' : ''}}" data-part="mealDay" data-value="{{item}}" catchtap="selectMealPart">
+                    {{item}}日
+                  </view>
+                </scroll-view>
+                <scroll-view class="meal-column" scroll-y>
+                  <view wx:for="{{mealHours}}" wx:key="*this" class="meal-option {{mealHour === item ? 'meal-option-selected' : ''}}" data-part="mealHour" data-value="{{item}}" catchtap="selectMealPart">
+                    {{item}}时
+                  </view>
+                </scroll-view>
+                <scroll-view class="meal-column" scroll-y>
+                  <view wx:for="{{mealMinutes}}" wx:key="*this" class="meal-option {{mealMinute === item ? 'meal-option-selected' : ''}}" data-part="mealMinute" data-value="{{item}}" catchtap="selectMealPart">
+                    {{item}}分
+                  </view>
+                </scroll-view>
+              </view>
+              <view class="meal-confirm" catchtap="confirmMealTime">确定</view>
+            </view>
+          </view>
+        </scroll-view>
+        <view class="submit-confirm-stage {{wishConfirmed ? 'submit-confirm-stage-active' : ''}}">
+          <view wx:if="{{!wishConfirmed}}" class="submit-bouncing-dot"></view>
+          <view class="submit-confirm-button {{wishConfirmed ? 'submit-confirm-button-active' : ''}}" hover-class="{{wishConfirmed ? '' : 'submit-confirm-hover'}}" catchtap="confirmWishList">
+            <text class="submit-confirm-label">确认提交想吃</text>
+          </view>
+        </view>
+        <view wx:if="{{wishConfirmed}}" class="wish-thanks">
+          <view class="wish-heart">♥</view>
+          <text class="wish-thanks-line wish-thanks-line-one">我已收到~</text>
+          <text class="wish-thanks-line wish-thanks-line-two">等你回来老婆~</text>
+        </view>
+      </view>
+      <view wx:if="{{submittedOrderVisible}}" class="submitted-page">
+  <text class="submitted-title">已提交的菜单</text>
+  <text class="submitted-subtitle">收到啦，等你回来一起吃~</text>
+
+  <scroll-view class="submitted-list" scroll-y>
+    <view wx:for="{{submittedItems}}" wx:key="id" class="submit-dish">
+      <image
+        class="submit-dish-image"
+        src="{{item.image}}"
+        mode="aspectFill"
+      />
+
+      <view class="submit-dish-info">
+        <text class="submit-dish-name">
+          {{item.name}} × {{item.quantity}}份
+        </text>
+        <text class="submit-dish-note">
+          {{item.note ? item.note : '暂无口味备注'}}
+        </text>
+      </view>
+    </view>
+
+    <view class="submitted-time">
+      <text>用餐时间</text>
+      <text class="submitted-time-value">
+        {{submittedMealDate && submittedMealTime
+          ? submittedMealDate + ' ' + submittedMealTime
+          : '暂未选择'}}
+      </text>
+    </view>
+  </scroll-view>
+
+  <view
+    class="continue-order-button"
+    hover-class="submit-confirm-hover"
+    catchtap="continueOrdering"
+  >
+    继续加菜
+  </view>
+</view>
+    </view>
+  </view>
+</view>
